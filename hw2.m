@@ -22,7 +22,7 @@ STDERR=2;                               % Define the standard error stream
 
 notes{1}.note='C4';
 notes{1}.start=0;
-notes{1}.duration=constants.durationChord*constants.fs;
+notes{1}.duration=constants.durationChord*constants.fs; % in # of samples
 notes{1}.velocity=1;
 notes{2}.note='E4';
 notes{2}.start=0;
@@ -35,7 +35,7 @@ notes{3}.velocity=1;
 
 instrument.temperament='Equal';
 instrument.sound='Additive';
-instrument.totalTime=find_length_of_notes(notes);
+instrument.totalTime=find_length_of_notes(notes)/constants.fs;
 
 % for just-tempered chords, use the root note and mode to generate
 % frequencies rather than a sequence of note names.
@@ -44,9 +44,9 @@ instrument.mode = 'Major';
 synthTypes={'Additive','Subtractive','FM','Waveshaper'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Questions 1--4 - samples
+%% Questions 1--4 - samples
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for cntSynth=1:length(synthTypes)
+for cntSynth=2:2
     instrument.sound=synthTypes{cntSynth};
     [soundSample]=create_sound(instrument,notes{1}, constants);
     
@@ -60,7 +60,7 @@ end % for cntSynth;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Question 5  - chords
+%% Question 5  - chords
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for cntSynth=1:length(synthTypes)
     % major chords
