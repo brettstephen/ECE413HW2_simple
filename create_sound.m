@@ -1,0 +1,163 @@
+function sound_sample = create_sound(instrument,notes,constants)
+% load constants
+fs = constants.fs;
+durationScale = constants.durationScale;
+durationChord = constants.durationChord;
+
+% find frequency of notes
+freq_vec = zeros();
+switch instrument.temperament
+    case {'Equal'}
+        if length(notes) > 1
+            for ii = 1:length(notes)
+                root = notes{ii}.note;
+                if length(root) == 1
+                    n_keys = 48 + root - 'A';
+                elseif length(root) == 2
+                    oct = str2double(root(2));
+                    n_keys = 12*oct + (root(1) - 'A') + 1;
+                else
+                    error('Inproper root specified');
+                end
+                freq_vec(ii) = 2^((n_keys - 49)/12) * 440;
+            end
+        else
+            root = notes.note;
+            if length(root) == 1
+                n_keys = 48 + root - 'A';
+            elseif length(root) == 2
+                oct = str2double(root(2));
+                n_keys = 12*oct + (root(1) - 'A') + 1;
+            else
+                error('Inproper root specified');
+            end
+            freq_vec = 2^((n_keys - 49)/12) * 440;
+        end
+    case {'Just'}
+        root = notes{1}.note;
+        if length(root) == 1
+            n_keys = 48 + root - 'A';
+        elseif length(root) == 2
+            oct = str2double(root(2));
+            n_keys = 12*oct + (root(1) - 'A') + 1;
+        else
+            error('Inproper root specified');
+        end
+        root_freq = 2^((n_keys - 49)/12) * 440;
+        freq_vec(1) = root_freq;
+        if length(notes) > 1
+            switch instrument.mode
+                case {'Major'}
+                    ratio_prev = cumprod([9/8*10/9 16/15*9/8]);
+                case {'Minor'}
+                    ratio_prev = cumprod([9/8*16/15 10/9*9/8]);
+            end
+            ratios = [1 ratio_prev];
+            freq_vec = root_freq*ratios;
+        end
+end
+
+t = 0:1/fs:(instrument.totalTime-1/fs);
+switch instrument.sound
+    case {'Additive'} % bell from Jerse 4.28
+        amp_mult = [1 .67 1 1.8 2.67 1.67 1.46 1.33 1.33 1 1.33];
+        dur_mult = [1 .9 .65 .55 .325 .35 .25 .2 .15 .1 .075];
+        freq_mult = [.56 .56 .92 .92 1.19 1.7 2 2.74 3 3.76 4.07];
+        freq_add = [0 1 0 1.7 0 0 0 0 0 0 0];
+        
+        tones = zeros(length(notes),length(t));
+        for ii = 1:length(notes)
+            if length(notes) > 1
+                dur_vec = notes{ii}.duration*dur_mult.';
+            else
+                dur_vec = notes.duration*dur_mult.';
+            end
+            t_mat = repmat(t,length(dur_vec),1);
+            for jj = 1:length(dur_vec)
+                if dur_vec(jj) < length(t)
+                    t_mat(jj,int64(dur_vec(jj))+1:end) = 0;
+                end
+%                 t_comp = 0:1/fs:(dur_vec(jj)-1/fs);
+%                 t_note = [t_comp zeros(1,length(t)-length(t_comp))];
+            end
+            freq_mat = repmat((freq_vec(ii)*freq_mult + freq_add).',1,length(t));
+            amp_mat = repmat(amp_mult.',1,length(t));
+            tones(ii,:) = sum(amp_mat.*sin(2*pi*freq_mat.*t_mat));
+        end
+        sound_sample = sum(tones,1);
+%         fund = sum(sin(2*pi*freq_vec.*repmat(t,length(freq_vec),1))/2.5);
+%         inharm = sum(sin(2*pi*(freq_vec/10).*repmat(t,length(freq_vec),1))/6);
+%         noise = sin(2*pi*500*normrnd(1)*repmat(t,length(freq_vec),1))
+    case {'Subtractive'}
+        vbw = dsp.VariableBandwidthFIRFilter('FilterType','Bandpass',...
+            'FilterOrder',500,'SampleRate',fs,'CenterFrequency',440,...
+            'Bandwidth',440/4,'Window','Chebyshev');
+        
+        tones = zeros(length(notes),length(t));
+        for ii = 1:length(notes)
+            vbw.CenterFrequency = freq_vec(ii);
+            vbw.Bandwidth = vbw.CenterFrequency/4;
+            freq_start = 0.8*freq_vec(ii);
+            freq_end = 1*freq_vec(ii);
+            source = sawtooth(2*pi*100.*t);
+            
+            p = 100;
+            cent_vec = linspace(freq_start,freq_end,p);
+            for jj = 1:p
+                vbw.CenterFrequency = cent_vec(jj);
+                tones(ii,((jj-1)*length(t)/p+1):jj*length(t)/p) = ...
+                    vbw(source(((jj-1)*length(t)/p+1):jj*length(t)/p));
+            end
+        end
+        attack = linspace(0,1,length(t)/2);
+        envelope = [attack ones(1,length(t)-length(t)/8-length(attack)) linspace(1,0,length(t)/8)];
+        tones = tones.*repmat(envelope,length(notes),1);
+        sound_sample = sum(tones,1);
+        
+%         bw = 100;
+%         b2 = exp(-2*pi*bw/fs);
+%         
+%         attack = linspace(0,1,length(t)/2);
+%         envelope = [attack ones(1,length(t)-length(t)/8-length(attack)) linspace(1,0,length(t)/8)];
+%         
+%         tones = zeros(length(notes),length(t)+2);
+%         tp2 = 0:1/fs:(instrument.totalTime+1/fs);
+%         for ii = 1:length(notes)
+%             b1 = -4*b2/(1+b2)*cos(2*pi*(linspace(freq_vec(ii)*0.7,freq_vec(ii)*1.1,length(t)))/fs);
+%             a0 = (1-b2)*sqrt(1-b1.^2/(4*b2));
+%             source = sawtooth(2*pi*freq_vec(ii).*tp2);
+%             for jj = 1:length(t)
+%                 tones(ii,jj+2) = [a0(jj) -b1(jj) -b2]*[source(jj+2);tones(ii,jj+1);tones(ii,jj)];
+%             end
+%         end
+%         tones = tones(:,3:end).*repmat(envelope,length(notes),1);
+%         sound_sample = sum(tones,1);
+
+     case {'FM'} % clarinet from Jerse 5.10
+         IMAX = 0.01;
+         f1_env = [((1:length(t)/4)/(length(t)/4)).^2 ones(1,(7*length(t)/8)-(length(t)/4)) ...
+             fliplr(((1:length(t)/8)/(length(t)/8)).^2)];
+         f2_env = [fliplr(((1:length(t)/4)/(length(t)/4)).^2) zeros(1,3*length(t)/4)];
+         
+         tones = zeros(length(notes),length(t));
+         for ii = 1:length(freq_vec)
+             fc = freq_vec(ii)*1.2;
+             fm = 2/3*fc;
+             IMAX = IMAX;
+             IMIN = IMAX/2;
+             
+             mod_amp = fm*(IMAX-IMIN)*f2_env + fm*IMIN;
+             mod_sig = mod_amp.*sin(2*pi*fm*t);
+             tones(ii,:) = f1_env.*sin(2*pi*(fc.*t + mod_sig));
+             if length(notes) > 1
+                 tones(ii,:) = [tones(ii,1:notes{ii}.duration) zeros(1,(notes{ii}.duration+1):length(t))];
+             else
+                 tones(ii,:) = [tones(ii,1:notes.duration) zeros(1,(notes.duration+1):length(t))];
+             end
+         end
+         sound_sample = sum(tones,1);
+%     case {'Waveshaper'}
+
+end
+
+end
