@@ -96,21 +96,21 @@ switch instrument.sound
         tones = zeros(length(notes),length(t));
         for ii = 1:length(notes)
             vbw.CenterFrequency = freq_vec(ii);
-            vbw.Bandwidth = vbw.CenterFrequency/4;
+            vbw.Bandwidth = vbw.CenterFrequency/16;
             freq_start = 0.8*freq_vec(ii);
-            freq_end = 1*freq_vec(ii);
-            source = sawtooth(2*pi*100.*t);
+            freq_end = 1.05*freq_vec(ii);
+            source = sawtooth(2*pi*200.*t);
             
-            p = 100;
+            p = 200;
             cent_vec = linspace(freq_start,freq_end,p);
             for jj = 1:p
                 vbw.CenterFrequency = cent_vec(jj);
                 tones(ii,((jj-1)*length(t)/p+1):jj*length(t)/p) = ...
-                    vbw(source(((jj-1)*length(t)/p+1):jj*length(t)/p));
+                    vbw(source(((jj-1)*length(t)/p+1):jj*length(t)/p).');
             end
         end
         attack = linspace(0,1,length(t)/2);
-        envelope = [attack ones(1,length(t)-length(t)/8-length(attack)) linspace(1,0,length(t)/8)];
+        envelope = [attack ones(1,length(t)-length(t)/16-length(attack)) linspace(1,0,length(t)/16)];
         tones = tones.*repmat(envelope,length(notes),1);
         sound_sample = sum(tones,1);
         
@@ -134,14 +134,14 @@ switch instrument.sound
 %         sound_sample = sum(tones,1);
 
      case {'FM'} % clarinet from Jerse 5.10
-         IMAX = 0.01;
+         IMAX = 0.001;
          f1_env = [((1:length(t)/4)/(length(t)/4)).^2 ones(1,(7*length(t)/8)-(length(t)/4)) ...
              fliplr(((1:length(t)/8)/(length(t)/8)).^2)];
          f2_env = [fliplr(((1:length(t)/4)/(length(t)/4)).^2) zeros(1,3*length(t)/4)];
          
          tones = zeros(length(notes),length(t));
          for ii = 1:length(freq_vec)
-             fc = freq_vec(ii)*1.2;
+             fc = freq_vec(ii);
              fm = 2/3*fc;
              IMAX = IMAX;
              IMIN = IMAX/2;

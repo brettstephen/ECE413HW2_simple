@@ -46,18 +46,18 @@ synthTypes={'Additive','Subtractive','FM','Waveshaper'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Questions 1--4 - samples
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for cntSynth=1:1
+for cntSynth=3:3
     instrument.sound=synthTypes{cntSynth};
-    %for ii = 1:length(notes)
-        [soundSample]=create_sound(instrument,notes{1},constants);
+    for ii = 1:length(notes)
+        [soundSample]=create_sound(instrument,notes{ii},constants);
 
         fprintf(STDOUT,'For the %s synthesis type...\n',synthTypes{cntSynth})
 
         fprintf(STDOUT,'Playing the Sample Note');
-        sound(0.5*soundSample,constants.fs);
+        sound(soundSample,constants.fs);
         fprintf('\n');
         pause(5)
-    %end
+    end
 end % for cntSynth;
 
 
