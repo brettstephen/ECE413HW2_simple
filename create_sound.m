@@ -97,9 +97,9 @@ switch instrument.sound
         for ii = 1:length(notes)
             vbw.CenterFrequency = freq_vec(ii);
             vbw.Bandwidth = vbw.CenterFrequency/16;
-            freq_start = 0.8*freq_vec(ii);
+            freq_start = 0.85*freq_vec(ii);
             freq_end = 1.05*freq_vec(ii);
-            source = sawtooth(2*pi*200.*t);
+            source = square(2*pi*100.*t);
             
             p = 200;
             cent_vec = linspace(freq_start,freq_end,p);
