@@ -73,16 +73,23 @@ switch instrument.sound
                 dur_vec = notes.duration*dur_mult.';
             end
             t_mat = repmat(t,length(dur_vec),1);
+            envelope = zeros(length(dur_vec),length(t));
             for jj = 1:length(dur_vec)
+                
                 if dur_vec(jj) < length(t)
                     t_mat(jj,int64(dur_vec(jj))+1:end) = 0;
+                    envelope(jj,:) = [ones(1,int64(dur_vec(jj)/2)) ...
+                        linspace(1,0,int64(dur_vec(jj)/2)) zeros(1,length(t)-int64(dur_vec(jj)))];
+                else
+                    envelope(jj,:) = [ones(1,int64(dur_vec(jj)/2)) ...
+                        linspace(1,0,int64(dur_vec(jj)/2))];
                 end
 %                 t_comp = 0:1/fs:(dur_vec(jj)-1/fs);
 %                 t_note = [t_comp zeros(1,length(t)-length(t_comp))];
             end
             freq_mat = repmat((freq_vec(ii)*freq_mult + freq_add).',1,length(t));
             amp_mat = repmat(amp_mult.',1,length(t));
-            tones(ii,:) = sum(amp_mat.*sin(2*pi*freq_mat.*t_mat));
+            tones(ii,:) = sum(amp_mat.*sin(2*pi*freq_mat.*t_mat).*envelope);
         end
         sound_sample = sum(tones,1);
 %         fund = sum(sin(2*pi*freq_vec.*repmat(t,length(freq_vec),1))/2.5);
