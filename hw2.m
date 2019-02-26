@@ -82,14 +82,21 @@ for cntSynth=1:length(synthTypes)
     
     fprintf(STDOUT,'For the %s synthesis type...\n',synthTypes{cntSynth})
     
-    disp('Playing the Just Tempered Major Chord');
+    fprintf(STDOUT,'Playing the Just Tempered Major Chord: %s Synthesis',synthTypes{cntSynth})
     soundsc(soundMajorChordJust,constants.fs);
-    disp('Playing the Equal Tempered Major Chord');
+    fprintf('\n');
+    pause(5)
+    fprintf(STDOUT,'Playing the Equal Tempered Major Chord: %s Synthesis',synthTypes{cntSynth})
     soundsc(soundMajorChordEqual,constants.fs);
-    disp('Playing the Just Tempered Minor Chord');
+    fprintf('\n');
+    pause(5)
+    fprintf(STDOUT,'Playing the Just Tempered Minor Chord: %s Synthesis',synthTypes{cntSynth})
     soundsc(soundMinorChordJust,constants.fs);
-    disp('Playing the Equal Tempered Minor Chord');
+    fprintf('\n');
+    pause(5)
+    fprintf(STDOUT,'Playing the Equal Tempered Minor Chord: %s Synthesis',synthTypes{cntSynth})
     soundsc(soundMinorChordEqual,constants.fs);
+    pause(5)
     fprintf('\n');
     
 end % for cntSynth;

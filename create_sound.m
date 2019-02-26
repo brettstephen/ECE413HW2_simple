@@ -10,16 +10,17 @@ switch instrument.temperament
     case {'Equal'}
         if length(notes) > 1
             for ii = 1:length(notes)
-                root = notes{ii}.note;
-                if length(root) == 1
-                    n_keys = 48 + root - 'A';
-                elseif length(root) == 2
-                    oct = str2double(root(2));
-                    n_keys = 12*oct + (root(1) - 'A') + 1;
-                else
-                    error('Inproper root specified');
-                end
-                freq_vec(ii) = 2^((n_keys - 49)/12) * 440;
+                freq_vec(ii) = note_to_freq(notes{ii}.note);
+%                 root = notes{ii}.note;
+%                 if length(root) == 1
+%                     n_keys = 48 + root - 'A';
+%                 elseif length(root) == 2
+%                     oct = str2double(root(2));
+%                     n_keys = 12*oct + (root(1) - 'A') + 1;
+%                 else
+%                     error('Inproper root specified');
+%                 end
+%                 freq_vec(ii) = 2^((n_keys - 49)/12) * 440;
             end
         else
             root = notes.note;
@@ -34,18 +35,19 @@ switch instrument.temperament
             freq_vec = 2^((n_keys - 49)/12) * 440;
         end
     case {'Just'}
-        root = notes{1}.note;
-        if length(root) == 1
-            n_keys = 48 + root - 'A';
-        elseif length(root) == 2
-            oct = str2double(root(2));
-            n_keys = 12*oct + (root(1) - 'A') + 1;
-        else
-            error('Inproper root specified');
-        end
-        root_freq = 2^((n_keys - 49)/12) * 440;
-        freq_vec(1) = root_freq;
+%         if length(root) == 1
+%             n_keys = 48 + root - 'A';
+%         elseif length(root) == 2
+%             oct = str2double(root(2));
+%             n_keys = 12*oct + (root(1) - 'A') + 1;
+%         else
+%             error('Inproper root specified');
+%         end
+%         root_freq = 2^((n_keys - 49)/12) * 440;
         if length(notes) > 1
+            root = notes{1}.note;
+            root_freq = note_to_freq(root);
+            freq_vec(1) = root_freq;
             switch instrument.mode
                 case {'Major'}
                     ratio_prev = cumprod([9/8*10/9 16/15*9/8]);
@@ -54,6 +56,10 @@ switch instrument.temperament
             end
             ratios = [1 ratio_prev];
             freq_vec = root_freq*ratios;
+        else
+            root = notes.note;
+            root_freq = note_to_freq(root);
+            freq_vec = root_freq;
         end
 end
 
@@ -104,7 +110,7 @@ switch instrument.sound
         for ii = 1:length(notes)
             vbw.CenterFrequency = freq_vec(ii);
             vbw.Bandwidth = vbw.CenterFrequency/16;
-            freq_start = 0.85*freq_vec(ii);
+            freq_start = 0.55*freq_vec(ii);
             freq_end = 1.05*freq_vec(ii);
             source = square(2*pi*100.*t);
             
@@ -188,4 +194,9 @@ function output = wave_shape(input)
     output(input <= 200) = intermed(1,(input <= 200));
     output(input > 200 & input < 312) = intermed(2,(input > 200 & input < 312));
     output(input >= 312) = intermed(3,(input >= 312));
+end
+
+function freq = note_to_freq(note)
+    note_table = readtable('note_freq.csv','ReadRowNames',1);
+    freq = note_table(note,1).Hz;
 end
