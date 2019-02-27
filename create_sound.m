@@ -169,15 +169,18 @@ switch instrument.sound
              end
          end
          sound_sample = sum(tones,1);
-    case {'Waveshaper'}
-        envelope = [linspace(0,1,0.085*length(t)) linspace(1,0.75,0.015*length(t)) ...
-            0.75*ones(1,(1-0.085-0.015-0.64)*length(t)) linspace(0.75,0,0.64*length(t))];
+    case {'Waveshaper'} % clarinet from Jerse 5.28
+        attack = 0.085;
+        decay = 0.025;
+        release = 0.64;
+        envelope = [linspace(0,1,attack*length(t)) linspace(1,0.75,decay*length(t)) ...
+            0.75*ones(1,(1-attack-decay-release)*length(t)) linspace(0.75,0,release*length(t))];
         
         tones = zeros(length(notes),length(t));
         for ii = 1:length(notes)
-            source_sig = 255*sin(2*pi*freq_vec(ii).*t);
-            env_sig = source_sig.*envelope + 256;
-            tones(ii,:) = wave_shape(env_sig);
+            source_sig = 255*sin(2*pi*freq_vec(ii).*t); % generate sinewave
+            env_sig = source_sig.*envelope + 256; % apply envelope
+            tones(ii,:) = wave_shape(env_sig); % wave-shaping
         end
         sound_sample = sum(tones,1);
 end
@@ -186,17 +189,17 @@ end
 
 function output = wave_shape(input)
     output = zeros(size(input));
-    tf_left = @(x) (0.5/(511-312))*x - 1;
+    tf_left = @(x) (0.5/(511-312))*x - 1; % transfer function
     tf_center = @(x) (0.5/(312-255))*(x-255);
     tf_right = @(x) (0.5/200)*(x-511) + 1;
     
-    intermed = [tf_left(input);tf_center(input);tf_right(input)];
+    intermed = [tf_left(input);tf_center(input);tf_right(input)]; % apply transfer function
     output(input <= 200) = intermed(1,(input <= 200));
     output(input > 200 & input < 312) = intermed(2,(input > 200 & input < 312));
     output(input >= 312) = intermed(3,(input >= 312));
 end
 
-function freq = note_to_freq(note)
+function freq = note_to_freq(note) % look up frequency
     note_table = readtable('note_freq.csv','ReadRowNames',1);
     freq = note_table(note,1).Hz;
 end
